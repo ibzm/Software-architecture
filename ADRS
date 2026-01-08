@@ -1,0 +1,147 @@
+ADR- 001 Architectural style for the CMS proof of concept
+Context and problem statement 
+The complaint management system (CMS) must support a multi-tenant workflow where consumers log complaints and help desk agents assign them, with strict role based access control and auditability. The proof of concept needs to demonstrate two functional requirements and one usability/accessibility NFR while remaining realistic and maintainable. The problem is deciding which architectural style best supports these requirements without adding unnecessary build and deployment complexity for a small POC.
+Decision drivers 
+•	Poc scope and time constraints: deliver UC1 + UC2 reliably with limited time
+•	Maintainability: clear separation of concerns (UI, business logic, data access)
+•	Security: Support RBAC and prevent unauthorised actions.
+•	multi-organisation isolation: ensure organisation- scoped data access.
+•	consistency with C4 design: UI + backend logic + relational DB + external services.
+•	ease of demonstration: simple setup easy to record in a short video.
+Considered options
+1.	modular monolith(Laravel) with layered separation (controller → Service → Repository)
+2.	microservices / service oriented architecture
+3.	onion / hexagonal architecture
+Decision outcome 
+Chosen option: “modular monolith(Laravel) with layered separation”, because it best fits the proof-of-concept constraints while still meeting the key drivers( maintainability, RBAC, organisation isolation) and aligns cleanly with the c4/container/component design, it enables end to end delivery of complaint creation and assignment with minimal deployment complexity compare to microservices, and with less abstraction overhead than a full onion architecture.
+Consequences
+Good because 
+Enables rapid implementation of the POC while keeping the solution realistic and structured 
+Supports separation of concerns using a lightweight layering approach (controllers for HTTP, services for business logic, repositories for persistence).
+Simplifies RBAC enforcement and organisation scoped access checks in a single codebase.
+makes it straightforward to produce validation evidence (ui screenshots + database evidence + access denial tests)
+Bad because
+limits independent scaling of services compared to microservices.
+Requires discipline to maintain boundaries between layers#
+Confirmation
+Compliance will be confirmed by
+Verifying that the c4 diagrams match the implemented structure (Browser UI → Laravel app → DB + external notification)
+Code review ton ensure controllers delegate to services and persistence is separated via repositories. 
+POC demonstration showing UC! And UC” working end to end, including RBAC denial  behaviour and assignment history records
+Pros and cons of options. 
+Modular monolith (Laravel) with layered separations
+Good, because
+•	Lowest overhead for setup and deployment 
+•	Clear structure for maintainability and marking criteria.
+•	Easy to demonstrate in a vide and gather evidence
+Bad because
+Less “distributed” than microservices
+Layer boundaries are a convention not enforces automatically
+Option 2: microservices
+Good because
+•	Strong separation and independent deplorability
+•	Scales well in theory
+Bad, because
+•	High overhead(service boundaries, deployment, integration, failure modes)
+•	Overkill for POC scope (2 FR + 1 NFR)
+
+option 3: Onion / hexagonal
+Good because
+•	Strong separation and testability
+•	Cleaner dependency direction.
+Bad, because 
+•	Extra abstraction and boilerplate for a small POC/
+•	Slower to implement compared to layered modular monolith 
+
+ADR-002: Authentication and role- based access control 
+Context and problem statement 
+The CMS must restrict access to actions such as complaint assignment 
+reassignment based on user roles (Consumer, Help desk agent, system administrator) For the proof of concept, authentication must be simple to implement while still demonstrating secure access control aligned with the system’s architectural design
+
+Decision Drivers
+•	Security: prevent unauthorised access to restricted cations
+•	RBAC requirement: only agents can assign complaints; only administrators can override assignments
+•	POC feasibility: authentication must be quick to set up and reliable
+•	Consistencty: align with Laravel technology stack and c4 diagrams
+Considered options
+1.	Laravel breeze (session-based authentication with roles)
+2.	Token based authentication (JWT)
+3.	External SSO/identity provider only
+
+Decision outcome
+Chosen option: Laravel breeze with session based authentication and application level
+RBAC, because it provides a lightweight, secure authentication mechanism suitable for
+A poc while allowing clean enforcement of role based permissions. It integrates naturally with Laravel’s MVC structure and avoids unnecessary complexity.
+Consequences
+Good, because 
+•	Enables rapid POC development with minimal configuration
+•	Clear mapping between user roles and permitted actions
+•	RBAC checks can be demonstrated and validated easily 
+Bad, because
+•	Not suitable for large scale distributed systems 
+•	Limited support for advanced authentication features such as SSO or MFA
+
+Confirmation
+•	Attempting restricted cactions with an incorrect role results in access denial. 
+•	RBAC behavior is demonstrated during the POC and captured in validation evidence.
+•	Authentication and authorisation logic is clearly separated from UI concerns.
+Pros and cons of options
+Option 1: Laravel breeze + RBAC
+Good, because
+•	Simple and fast to implement 
+•	Well suited for the poc scope
+•	Easy to demonstrate in a short video
+Bad, because
+•	Session based auth is less flexible than token based systems.
+Option 2:JWT authentication
+Good, because
+•	Better suited for APIS and distributed clients
+Bad, because
+•	Requires external; configuration beyond POC scope.
+
+ADR-003: integration mechanism for notification and future chatbot
+Context and problem statement 
+The CMS must send notifications when complaints are created or assigned. Additionally, the system should be extendible to support future integrations such as a chatbot interface without requiring major architectural changes.
+Decision Drivers
+•	Extendibility: support future integrations (e.g chatbot)
+•	Separation of concerns: avoid embedding integration logic in controllers
+•	POC scope: External services should be simulated rather than fully implemented
+•	Architectural clarity: align with component – based design
+Considered options 
+1.	Direct integration logic inside controllers
+2.	Dedicated service abstraction (notification service)
+3.	Event driven messaging with external brokers
+Decision outcome 
+Chosen option: Dedicated service abstraction for integration, where a notification encapsulates communication with external systems. In the POC, this is implemented as a log, with the design of supporting future real Email/SMS providers and chatbot interfaces
+Consequences
+Good, because 
+•	Keeps business logic clean and testable.
+•	Supports future chatbot integration without modifying core services.
+•	Aligns with modular monolith and component design
+Bad, because
+•	External integrations are simulated rather than fully implemented.
+•	Event driven scalability not show in POC.
+Confirmation
+•	Notification actions are triggered during complaint creation and assignment.
+•	When a notification should be sent, the system writes a message to the log instead of sending a real email or SMS
+•	Architecture diagrams show clear boundaries between core logic and integrations,
+
+Procs and cons of the options
+Option 1; direct controller integration
+Good, because
+•	Fast to implement
+Bad, because 
+•	poor separation of concerns.
+•	Difficult to extend or test.
+Option 2: Service abstraction (chosen)
+•	Clean separation and extendibility.
+•	Supports future chatbot integration
+Bad, because
+•	Slightly more boiler plate
+Option 3: Event driven messaging 
+Good, because
+•	Highly scalable
+Bad, because 
+•	Overkill for Poc scope.
+
+
